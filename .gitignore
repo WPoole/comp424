@@ -1,3 +1,5 @@
 ./logs/*
 ./logs/outcomes.txt
 *.log
+outcomes.txt
+/logs/outcomes.txt
