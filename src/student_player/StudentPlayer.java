@@ -45,16 +45,24 @@ public class StudentPlayer extends TablutPlayer {
 
 		return false;
 	}
+	
+	public int isKingCaptured(TablutBoardState boardState) {
+		if(boardState.getKingPosition() == null) {
+			return 1;
+		}
+		
+		return 0;
+	}
 
 	public int evaluationFunction(TablutBoardState boardState) {
 		// We will use a weighted linear function. We will create the function in such a way that
 		// the MUSCOVITES (BLACK) will be the ones maximizing it.
 		// The features of the function will be:
 		// 1. Number of white pieces captured.
-		int numWhitePieces = 9 - boardState.getNumberPlayerPieces(1); // 9 is initial number of Swedes.
+		int numWhitePiecesCaptured = 9 - boardState.getNumberPlayerPieces(1); // 9 is initial number of Swedes.
 
 		// 2. Number of black pieces remaining.
-		int numBlackPieces = boardState.getNumberPlayerPieces(0);
+		int numBlackPiecesRemaining = boardState.getNumberPlayerPieces(0);
 
 		// 3. Distance of king from nearest corner.
 		int distanceOfKingFromNearestCorner = Coordinates.distanceToClosestCorner(boardState.getKingPosition());
@@ -63,9 +71,11 @@ public class StudentPlayer extends TablutPlayer {
 		// 5. Whether the king is in the center position or in one of the position that neighbors the center.
 		// 6. Whether the king (in his current position) has potential to be captured in EXACTLY one more move from black.
 		// 7. Whether the king (in his current position) is EXACTLY one move away from reaching a corner.
+		// 8. Whether the king is captured or not.
+		int isKingCaptured = isKingCaptured(boardState);
 
 		// Now we compose value to return.
-		return ((numWhitePieces * 1) + (numBlackPieces * 1) + (distanceOfKingFromNearestCorner * 1));
+		return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1));
 
 	}
 
@@ -159,7 +169,9 @@ public class StudentPlayer extends TablutPlayer {
 		boolean isMaxPlayer = isMaxPlayer(myColour);
 
 		// Find move using minimax algorithm.
-		TablutMove myMove = miniMaxDecision(3, myColour, boardState, isMaxPlayer);
+		TablutMove myMove = miniMaxDecision(1, myColour, boardState, isMaxPlayer);
+		
+//		TablutMove myMove = (TablutMove) boardState.getRandomMove();
 		
 		// Return your move to be processed by the server.
 		return myMove;
