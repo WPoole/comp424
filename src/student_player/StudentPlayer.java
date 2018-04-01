@@ -4,6 +4,7 @@ import java.util.List;
 
 import boardgame.Board;
 import boardgame.Move;
+import coordinates.Coord;
 import coordinates.Coordinates;
 import tablut.TablutBoardState;
 import tablut.TablutMove;
@@ -53,6 +54,15 @@ public class StudentPlayer extends TablutPlayer {
 		
 		return 0;
 	}
+	
+	public int isKingInCorner(TablutBoardState boardState) {
+		Coord kingCoord = boardState.getKingPosition();
+		if(kingCoord == null || Coordinates.isCorner(kingCoord)) {
+			return -1;
+		}
+		
+		return 1;
+	}
 
 	public int evaluationFunction(TablutBoardState boardState) {
 		// We will use a weighted linear function. We will create the function in such a way that
@@ -65,7 +75,10 @@ public class StudentPlayer extends TablutPlayer {
 		int numBlackPiecesRemaining = boardState.getNumberPlayerPieces(0);
 
 		// 3. Distance of king from nearest corner.
-		int distanceOfKingFromNearestCorner = Coordinates.distanceToClosestCorner(boardState.getKingPosition());
+		// TODO: FOR SOME REASON THIS NEXT LINE THROWS AN EXCEPTION EVERY TIME IT IS CALLED.
+		// IMPORTANT NOTE: IF YOU GET AN EXCEPTION ANYWHERE WHEN CHOOSING MOVE, A RANDOM MOVE IS PLAYED AUTOMATICALLY!
+		// ADD CHECK FOR NULL. ONLY HAPPENS WHEN YOURE ONE MOVE AWAY FROM CORNER!!
+//		int distanceOfKingFromNearestCorner = Coordinates.distanceToClosestCorner(boardState.getKingPosition());
 
 		// 4. Whether or not the king is DIRECTLY adjacent to a corner.
 		// 5. Whether the king is in the center position or in one of the position that neighbors the center.
@@ -73,9 +86,13 @@ public class StudentPlayer extends TablutPlayer {
 		// 7. Whether the king (in his current position) is EXACTLY one move away from reaching a corner.
 		// 8. Whether the king is captured or not.
 		int isKingCaptured = isKingCaptured(boardState);
+		
+		// 9. Whether the king has actually reached a corner or not.
+		// TODO: Need to think this one through a bit more, not quite working.
+		int isKingInCorner = isKingInCorner(boardState);
 
 		// Now we compose value to return.
-		return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1));
+		return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100));
 
 	}
 
@@ -169,7 +186,7 @@ public class StudentPlayer extends TablutPlayer {
 		boolean isMaxPlayer = isMaxPlayer(myColour);
 
 		// Find move using minimax algorithm.
-		TablutMove myMove = miniMaxDecision(1, myColour, boardState, isMaxPlayer);
+		TablutMove myMove = miniMaxDecision(2, myColour, boardState, isMaxPlayer);
 		
 //		TablutMove myMove = (TablutMove) boardState.getRandomMove();
 		
