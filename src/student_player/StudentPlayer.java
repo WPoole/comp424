@@ -158,9 +158,9 @@ public class StudentPlayer extends TablutPlayer {
 		int myColour = 1 - opponentColour;
 		boolean isMaxPlayer = isMaxPlayer(myColour);
 
-		// Is random the best you can do?
-		Move myMove = clonedBoardState.getRandomMove();
-
+		// Find move using minimax algorithm.
+		TablutMove myMove = miniMaxDecision(3, myColour, boardState, isMaxPlayer);
+		
 		// Return your move to be processed by the server.
 		return myMove;
 	}
