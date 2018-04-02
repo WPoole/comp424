@@ -105,6 +105,37 @@ public class StudentPlayer extends TablutPlayer {
 		return 0;
 	}
 
+	public boolean isKingAdjacentOrDiagonallyAdjacentToCornerBoolean(TablutBoardState boardState, boolean hasKingBeenCaptured) {
+		if(!hasKingBeenCaptured) {
+			// First we check if King is adjacent to corner squares.
+			Coord kingCoord = boardState.getKingPosition();
+			List<Coord> cornerCoords = Coordinates.getCorners();
+			for(Coord corner : cornerCoords) {
+				List<Coord> coordsAdjacentToCorner = Coordinates.getNeighbors(corner);
+
+				for(Coord cornerAdjacent : coordsAdjacentToCorner) {
+					// If the king IS in a square adjacent to a corner, return 2 (good for black).
+					if(areTwoCoordsTheSame(kingCoord, cornerAdjacent)) {
+						return true;
+					}
+				}
+			}
+
+			// We also then check if the King is in any of the squares that are "diagonally adjacent" to 
+			// the corners. i.e. Any of the following coordinates: (x: 1, y: 1), (x: 1, y: 7), (x: 7, y: 1), (x: 7, y: 7).
+			if((kingCoord.x == 1 && kingCoord.y == 1) || (kingCoord.x == 1 && kingCoord.y == 7) || 
+					(kingCoord.x == 7 && kingCoord.y == 1) || (kingCoord.x == 7 && kingCoord.y == 7)) {
+				// If the king IS in a square diagonally adjacent to a corner, return 0 (indifferent for black but not good for white).
+				return true;
+			}
+
+			// If the king is NOT in a square adjacent or diagonally adjacent to a corner, return -1 (good for white).
+			return false;
+		}
+
+		return false;
+	}
+
 	// TODO: Complete this method. (This one might be hard to do / impossible since 
 	// we would need to look further ahead in the tree than we currently are).
 	public int isKingOneMoveFromFinish(TablutBoardState boardState) {
@@ -132,11 +163,11 @@ public class StudentPlayer extends TablutPlayer {
 						}
 					}
 				}
-				
+
 				// If we get through all of the King's neighbors and none of them are black pieces, it is safe to move here.
 				return -1;
-				
-				
+
+
 			} else { // If the King HAS been captured, we don't care much so return 0.
 				return 0;
 			}
@@ -170,7 +201,8 @@ public class StudentPlayer extends TablutPlayer {
 		// 4. Whether or not the king is DIRECTLY adjacent to a corner.
 		// TODO: This isn't quite right. As of right now it prevents us from reaching the corner in most cases.
 		int isKingAdjacentOrDiagonallyAdjacentToCorner = isKingAdjacentOrDiagonallyAdjacentToCorner(boardState, hasKingBeenCaptured);
-
+		boolean isKingAdjacentOrDiagonallyAdjacentToCornerBoolean = isKingAdjacentOrDiagonallyAdjacentToCornerBoolean(boardState, hasKingBeenCaptured);
+		
 		// 5. Whether the king is in the center position or in one of the position that neighbors the center.
 		// 6. Whether the king (in his current position) has potential to be captured in EXACTLY one more move from black.
 		// i.e. Are we moving King directly adjacent to a black piece.
@@ -187,8 +219,14 @@ public class StudentPlayer extends TablutPlayer {
 		int isKingInCorner = isKingInCorner(boardState, hasKingBeenCaptured);
 
 		// Now we compose value to return.
-		return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100) 
-				+ (distanceOfKingFromNearestCorner * 10));
+		if(isKingAdjacentOrDiagonallyAdjacentToCornerBoolean) {
+			return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100) 
+					+ (distanceOfKingFromNearestCorner * 10) + 100);
+		} else {
+			return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100) 
+					+ (distanceOfKingFromNearestCorner * 10));
+		}
+		
 	}
 
 	public TablutMove miniMaxDecision(int depth, int myColour, TablutBoardState boardState, boolean isMaxPlayer) {
