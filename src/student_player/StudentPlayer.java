@@ -46,25 +46,71 @@ public class StudentPlayer extends TablutPlayer {
 
 		return false;
 	}
-	
+
 	public int isKingCaptured(TablutBoardState boardState) {
 		if(boardState.getKingPosition() == null) {
 			return 1;
 		}
-		
+
 		return 0;
 	}
-	
-	public int isKingInCorner(TablutBoardState boardState) {
-		Coord kingCoord = boardState.getKingPosition();
-		if(kingCoord == null || Coordinates.isCorner(kingCoord)) {
+
+	public int isKingInCorner(TablutBoardState boardState, boolean hasKingBeenCaptured) {
+		if(!hasKingBeenCaptured) {
+			if(Coordinates.isCorner(boardState.getKingPosition())) {
+				return -1;
+			}
+		}
+
+		return 0;
+	}
+
+	public int getDistanceOfKingFromNearestCorner(TablutBoardState boardState, boolean hasKingBeenCaptured) {
+		if(!hasKingBeenCaptured) {
+			return Coordinates.distanceToClosestCorner(boardState.getKingPosition());
+		}
+
+		return 0;
+	}
+
+	public int isKingAdjacentToCorner(TablutBoardState boardState, boolean hasKingBeenCaptured) {
+		if(!hasKingBeenCaptured) {
+			List<Coord> cornerCoords = Coordinates.getCorners();
+			for(Coord corner : cornerCoords) {
+				List<Coord> coordsAdjacentToCorner = Coordinates.getNeighbors(corner);
+
+				for(Coord cornerAdjacent : coordsAdjacentToCorner) {
+					// If the king is NOT in a square adjacent to a corner, return 1 (good for black).
+					if(areTwoCoordsTheSame(boardState.getKingPosition(), cornerAdjacent)) {
+						return 1;
+					}
+				}
+			}
+			
+			// If the king is NOT in a square adjacent to a corner, return -1 (good for white).
 			return -1;
 		}
-		
-		return 1;
+
+		return 0;
+	}
+
+	// TODO: Complete this method.
+	public int isKingOneMoveFromFinish(TablutBoardState boardState) {
+		return 0;
+	}
+
+	public boolean areTwoCoordsTheSame(Coord a, Coord b) {
+		if((a.x == b.x) && (a.y == b.y)) {
+			return true;
+		}
+
+		return false;
 	}
 
 	public int evaluationFunction(TablutBoardState boardState) {
+		// Flag to know if King has been captured or not.
+		boolean hasKingBeenCaptured = false;
+
 		// We will use a weighted linear function. We will create the function in such a way that
 		// the MUSCOVITES (BLACK) will be the ones maximizing it.
 		// The features of the function will be:
@@ -74,31 +120,41 @@ public class StudentPlayer extends TablutPlayer {
 		// 2. Number of black pieces remaining.
 		int numBlackPiecesRemaining = boardState.getNumberPlayerPieces(0);
 
-		// 3. Distance of king from nearest corner.
-		// TODO: FOR SOME REASON THIS NEXT LINE THROWS AN EXCEPTION EVERY TIME IT IS CALLED.
-		// IMPORTANT NOTE: IF YOU GET AN EXCEPTION ANYWHERE WHEN CHOOSING MOVE, A RANDOM MOVE IS PLAYED AUTOMATICALLY!
-		// ADD CHECK FOR NULL. ONLY HAPPENS WHEN YOURE ONE MOVE AWAY FROM CORNER!!
-//		int distanceOfKingFromNearestCorner = Coordinates.distanceToClosestCorner(boardState.getKingPosition());
+		// 3. Whether the king is captured or not.
+		int isKingCaptured = isKingCaptured(boardState);
+		// If the King has been captured, we know that its position value will be null. Therefore, any other checks 
+		// on the king following this will give null pointer exceptions. Therefore, if the King has been captured,
+		// set this flag so that we don't perform the other checks.
+		if(isKingCaptured == 1) {
+			hasKingBeenCaptured = true;
+		}
 
 		// 4. Whether or not the king is DIRECTLY adjacent to a corner.
+		// TODO: This isn't quite right. As of right now it prevents us from reaching the corner in most cases.
+		int isKingAdjacentToCorner = isKingAdjacentToCorner(boardState, hasKingBeenCaptured);
+
 		// 5. Whether the king is in the center position or in one of the position that neighbors the center.
-		// 6. Whether the king (in his current position) has potential to be captured in EXACTLY one more move from black.
+		// 6. Whether the king (in his current position) has potential to be captured in EXACTLY one more move from black. (Use sandwich function).
 		// 7. Whether the king (in his current position) is EXACTLY one move away from reaching a corner.
-		// 8. Whether the king is captured or not.
-		int isKingCaptured = isKingCaptured(boardState);
-		
+		int isKingOneMoveFromCorner = isKingOneMoveFromFinish(boardState);
+
+		// 8. Distance of king from nearest corner.
+		int distanceOfKingFromNearestCorner = getDistanceOfKingFromNearestCorner(boardState, hasKingBeenCaptured);
+
 		// 9. Whether the king has actually reached a corner or not.
 		// TODO: Need to think this one through a bit more, not quite working.
-		int isKingInCorner = isKingInCorner(boardState);
+		int isKingInCorner = isKingInCorner(boardState, hasKingBeenCaptured);
 
 		// Now we compose value to return.
-		return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100));
+		return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100) 
+				+ (distanceOfKingFromNearestCorner * 10) + isKingAdjacentToCorner * 10);
 
 	}
 
 	public TablutMove miniMaxDecision(int depth, int myColour, TablutBoardState boardState, boolean isMaxPlayer) {
 		// Variables to be updated upon finding of better moves.
 		int currentHighestValue = Integer.MIN_VALUE;
+		int currentLowestValue = Integer.MAX_VALUE;
 		TablutMove optimalMove = null;
 
 		// Cycle through various subsequent states (i.e. next moves).
@@ -112,11 +168,24 @@ public class StudentPlayer extends TablutPlayer {
 			boolean isLeafState = isLeafState(clonedBoardState);
 
 			int moveValue = miniMaxValue(depth, myColour, clonedBoardState, isLeafState, isMaxPlayer);
-			if(moveValue > currentHighestValue) {
-				currentHighestValue = moveValue;
-				optimalMove = move;
+			System.out.println("MOVE VALUE: " + moveValue);
+			if(isMaxPlayer) {
+				if(moveValue > currentHighestValue) {
+					currentHighestValue = moveValue;
+					optimalMove = move;
+				}
+			} else {
+				if(moveValue < currentLowestValue) {
+					currentLowestValue = moveValue;
+					optimalMove = move;
+				}
 			}
+		}
 
+		if(isMaxPlayer) {
+			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + currentHighestValue);
+		} else {
+			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + currentLowestValue);
 		}
 
 		return optimalMove;
@@ -162,7 +231,7 @@ public class StudentPlayer extends TablutPlayer {
 					currentLowestValue = moveValue;
 				}
 			}
-			
+
 			return currentLowestValue;
 		}
 	}
@@ -178,7 +247,6 @@ public class StudentPlayer extends TablutPlayer {
 		// strategies...
 		MyTools.getSomething();
 
-
 		//        *********************************************************************************
 		// Find out who is black (0) and who is white (1), and whether I am max player (black) or not.
 		int opponentColour = boardState.getOpponent();
@@ -187,10 +255,12 @@ public class StudentPlayer extends TablutPlayer {
 
 		// Find move using minimax algorithm.
 		TablutMove myMove = miniMaxDecision(2, myColour, boardState, isMaxPlayer);
-		
-//		TablutMove myMove = (TablutMove) boardState.getRandomMove();
-		
+
+		//		TablutMove myMove = (TablutMove) boardState.getRandomMove();
+
 		// Return your move to be processed by the server.
 		return myMove;
+
+
 	}
 }
