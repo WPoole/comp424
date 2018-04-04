@@ -294,7 +294,7 @@ public class Server implements Runnable {
                 }
                 ss = svrSock;
             }
-            System.out.println("Server started. Waiting for incoming connections on " + hostname + ":" + port + " ...");
+//            System.out.println("Server started. Waiting for incoming connections on " + hostname + ":" + port + " ...");
             int accepted = 0;
             while (!gameEnded && accepted < board.getNumberOfPlayers()) {
 
@@ -306,8 +306,8 @@ public class Server implements Runnable {
 
                 new Thread(players[accepted]).start();
 
-                System.out.println("Accepted connection from " + client.getInetAddress().getHostName() + ": "
-                        + board.getNameForID(players[accepted].getPlayerID()));
+//                System.out.println("Accepted connection from " + client.getInetAddress().getHostName() + ": "
+//                        + board.getNameForID(players[accepted].getPlayerID()));
                 accepted++;
             }
         } catch (Exception e) {
@@ -559,7 +559,7 @@ public class Server implements Runnable {
             msg += "CANCELLED 1";
             break;
         default:
-            msg += "WINNER " + board.getWinner();
+            msg += "******************************************************************************** WINNER " + board.getWinner() + "\n";
         }
 
         if (gui != null)
@@ -669,7 +669,7 @@ public class Server implements Runnable {
 
     private void log(String str) {
         if (!quiet)
-            System.out.println("% " + str);
+            System.out.print(" % " + str);
         if (logOut != null)
             logOut.println(str);
     }

@@ -23,10 +23,6 @@ public class StudentPlayer extends TablutPlayer {
 		super("260508650");
 	}
 
-	public int evaluationFunction() {
-		return 0;
-	}
-
 	public boolean isLeafState(TablutBoardState boardState) {
 		// A leaf state is achieved is the game is over.
 		// The game is over when one of two things happen:
@@ -93,72 +89,6 @@ public class StudentPlayer extends TablutPlayer {
 		return 0;
 	}
 
-	public int isKingAdjacentOrDiagonallyAdjacentToCorner(TablutBoardState boardState, boolean hasKingBeenCaptured) {
-		if(!hasKingBeenCaptured) {
-			// First we check if King is adjacent to corner squares.
-			Coord kingCoord = boardState.getKingPosition();
-			List<Coord> cornerCoords = Coordinates.getCorners();
-			for(Coord corner : cornerCoords) {
-				List<Coord> coordsAdjacentToCorner = Coordinates.getNeighbors(corner);
-
-				for(Coord cornerAdjacent : coordsAdjacentToCorner) {
-					// If the king IS in a square adjacent to a corner, return 2 (good for black).
-					if(areTwoCoordsTheSame(kingCoord, cornerAdjacent)) {
-						return 1;
-					}
-				}
-			}
-
-			// We also then check if the King is in any of the squares that are "diagonally adjacent" to 
-			// the corners. i.e. Any of the following coordinates: (x: 1, y: 1), (x: 1, y: 7), (x: 7, y: 1), (x: 7, y: 7).
-			if((kingCoord.x == 1 && kingCoord.y == 1) || (kingCoord.x == 1 && kingCoord.y == 7) || 
-					(kingCoord.x == 7 && kingCoord.y == 1) || (kingCoord.x == 7 && kingCoord.y == 7)) {
-				// If the king IS in a square diagonally adjacent to a corner, return 0 (indifferent for black but not good for white).
-				return 0;
-			}
-
-			// If the king is NOT in a square adjacent or diagonally adjacent to a corner, return -1 (good for white).
-			return -1;
-		}
-
-		return 0;
-	}
-
-	public boolean isKingAdjacentOrDiagonallyAdjacentToCornerBoolean(TablutBoardState boardState, boolean hasKingBeenCaptured, int myColour) {
-		if(myColour == 0) { // We don't really care about this if we are black.
-			return false;
-		}
-
-		if(!hasKingBeenCaptured) {
-			// First we check if King is adjacent to corner squares.
-			Coord kingCoord = boardState.getKingPosition();
-			List<Coord> cornerCoords = Coordinates.getCorners();
-			for(Coord corner : cornerCoords) {
-				List<Coord> coordsAdjacentToCorner = Coordinates.getNeighbors(corner);
-
-				for(Coord cornerAdjacent : coordsAdjacentToCorner) {
-					// If the king IS in a square adjacent to a corner, return 2 (good for black).
-					if(areTwoCoordsTheSame(kingCoord, cornerAdjacent)) {
-						return true;
-					}
-				}
-			}
-
-			// We also then check if the King is in any of the squares that are "diagonally adjacent" to 
-			// the corners. i.e. Any of the following coordinates: (x: 1, y: 1), (x: 1, y: 7), (x: 7, y: 1), (x: 7, y: 7).
-			if((kingCoord.x == 1 && kingCoord.y == 1) || (kingCoord.x == 1 && kingCoord.y == 7) || 
-					(kingCoord.x == 7 && kingCoord.y == 1) || (kingCoord.x == 7 && kingCoord.y == 7)) {
-				// If the king IS in a square diagonally adjacent to a corner, return 0 (indifferent for black but not good for white).
-				return true;
-			}
-
-			// If the king is NOT in a square adjacent or diagonally adjacent to a corner, return -1 (good for white).
-			return false;
-		}
-
-		return false;
-	}
-
 	// TODO: Complete this method. (This one might be hard to do / impossible since 
 	// we would need to look further ahead in the tree than we currently are).
 	public int isKingOneMoveFromFinish(TablutBoardState boardState) {
@@ -221,12 +151,7 @@ public class StudentPlayer extends TablutPlayer {
 			hasKingBeenCaptured = true;
 		}
 
-		// 4. Whether or not the king is DIRECTLY adjacent to a corner.
-		// TODO: This isn't quite right. As of right now it prevents us from reaching the corner in most cases.
-		int isKingAdjacentOrDiagonallyAdjacentToCorner = isKingAdjacentOrDiagonallyAdjacentToCorner(boardState, hasKingBeenCaptured);
-		boolean isKingAdjacentOrDiagonallyAdjacentToCornerBoolean = isKingAdjacentOrDiagonallyAdjacentToCornerBoolean(boardState, hasKingBeenCaptured, myColour);
 
-		// 5. Whether the king is in the center position or in one of the position that neighbors the center.
 		// 6. Whether the king (in his current position) has potential to be captured in EXACTLY one more move from black.
 		// i.e. Are we moving King directly adjacent to a black piece.
 		int isKingAdjacentToBlack = isKingAdjacentToBlack(boardState, hasKingBeenCaptured, myColour);
@@ -239,62 +164,11 @@ public class StudentPlayer extends TablutPlayer {
 		int distanceOfKingFromAnyCorner = getDistanceOfKingFromAnyCorner(boardState, hasKingBeenCaptured);
 
 		// 9. Whether the king has actually reached a corner or not.
-		// TODO: Need to think this one through a bit more, not quite working.
 		int isKingInCorner = isKingInCorner(boardState, hasKingBeenCaptured);
 
-		// Now we compose value to return.
-		//		if(isKingAdjacentOrDiagonallyAdjacentToCornerBoolean) {
-		//			return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100) 
-		//					+ (distanceOfKingFromNearestCorner * 10) + 100);
-		//		} else {
-		//			return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100) 
-		//					+ (distanceOfKingFromNearestCorner * 10));
-		//		}
 		return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100) 
 				+ (distanceOfKingFromNearestCorner * 10) + (isKingInCorner * 100));
 
-	}
-
-	public TablutMove miniMaxDecision(int depth, int myColour, TablutBoardState boardState, boolean isMaxPlayer) {
-		// Variables to be updated upon finding of better moves.
-		int currentHighestValue = Integer.MIN_VALUE;
-		int currentLowestValue = Integer.MAX_VALUE;
-		TablutMove optimalMove = null;
-
-		// Cycle through various subsequent states (i.e. next moves).
-		List<TablutMove> legalMoves = boardState.getAllLegalMoves();
-		for(TablutMove move : legalMoves) {
-			// Clone boardState
-			TablutBoardState clonedBoardState = (TablutBoardState) boardState.clone();
-			clonedBoardState.processMove(move);
-
-			// Need to check if move we performed has brought us to a leaf state.
-			boolean isLeafState = isLeafState(clonedBoardState);
-
-			int moveValue = miniMaxValue(depth, myColour, clonedBoardState, isLeafState, isMaxPlayer);
-			System.out.println("MOVE VALUE: " + moveValue);
-			if(isMaxPlayer) {
-				if(moveValue > currentHighestValue) {
-					currentHighestValue = moveValue;
-					optimalMove = move;
-				}
-			} else {
-				if(moveValue < currentLowestValue) {
-					currentLowestValue = moveValue;
-					optimalMove = move;
-				}
-			}
-		}
-
-		if(isMaxPlayer) {
-			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + currentHighestValue);
-		} else {
-			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + currentLowestValue);
-		}
-
-		return optimalMove;
-
-		// We will behave as a MAX player if we are BLACK, and as a MIN player if we are WHITE.
 	}
 
 	public TablutMove miniMaxDecisionAB(int depth, int myColour, TablutBoardState boardState, boolean isMaxPlayer) {
@@ -314,7 +188,7 @@ public class StudentPlayer extends TablutPlayer {
 			boolean isLeafState = isLeafState(clonedBoardState);
 
 			int moveValue = miniMaxValueAB(depth, myColour, clonedBoardState, isLeafState, isMaxPlayer, a, b);
-			System.out.println("MOVE VALUE: " + moveValue);
+//			System.out.println("MOVE VALUE: " + moveValue);
 			if(isMaxPlayer) {
 				if(moveValue > a) {
 					a = moveValue;
@@ -329,55 +203,12 @@ public class StudentPlayer extends TablutPlayer {
 		}
 
 		if(isMaxPlayer) {
-			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + a);
+//			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + a);
 		} else {
-			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + b);
+//			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + b);
 		}
 
 		return optimalMove;
-	}
-
-	public int miniMaxValue(int depth, int myColour, TablutBoardState clonedBoardState, boolean isLeafState, boolean isMaxPlayer) {
-		if(depth == 0 || isLeafState) {
-			return evaluationFunction(clonedBoardState, myColour);
-		}
-
-		if(isMaxPlayer) { // If I am the max player.
-			int currentHighestValue = Integer.MIN_VALUE;
-
-			List<TablutMove> legalMoves = clonedBoardState.getAllLegalMoves();
-			for(TablutMove move : legalMoves) {
-				TablutBoardState clonedClonedBoardState = (TablutBoardState) clonedBoardState.clone();
-				clonedClonedBoardState.processMove(move);
-
-				boolean isCloneLeafState = isLeafState(clonedClonedBoardState);
-				int moveValue = miniMaxValue(depth-1, myColour, clonedClonedBoardState, isCloneLeafState, !isMaxPlayer);
-
-				if(moveValue > currentHighestValue) {
-					currentHighestValue = moveValue;
-				}
-			}
-
-			return currentHighestValue;
-
-		} else { // Else, I am the min player.
-			int currentLowestValue = Integer.MAX_VALUE;
-
-			List<TablutMove> legalMoves = clonedBoardState.getAllLegalMoves();
-			for(TablutMove move : legalMoves) {
-				TablutBoardState clonedClonedBoardState = (TablutBoardState) clonedBoardState.clone();
-				clonedClonedBoardState.processMove(move);
-
-				boolean isCloneLeafState = isLeafState(clonedClonedBoardState);
-				int moveValue = miniMaxValue(depth-1, myColour, clonedClonedBoardState, isCloneLeafState, !isMaxPlayer);
-
-				if(moveValue < currentLowestValue) {
-					currentLowestValue = moveValue;
-				}
-			}
-
-			return currentLowestValue;
-		}
 	}
 
 	public int miniMaxValueAB(int depth, int myColour, TablutBoardState clonedBoardState, boolean isLeafState, boolean isMaxPlayer, int a, int b) {
@@ -434,7 +265,7 @@ public class StudentPlayer extends TablutPlayer {
 
 		List<Coord> cornerCoords = Coordinates.getCorners();
 		for(Coord coord : cornerCoords) {
-			System.out.println("(x: " + coord.x + ", y: " + coord.y + ")");
+//			System.out.println("(x: " + coord.x + ", y: " + coord.y + ")");
 		}
 
 		// Find out who is black (0) and who is white (1), and whether I am max player (black) or not.
@@ -449,7 +280,7 @@ public class StudentPlayer extends TablutPlayer {
 		// For debugging.
 		TablutBoardState copy = (TablutBoardState) boardState.clone();
 		copy.processMove(myMove);
-		System.out.println("IS KING ADJACENT TO BLACK: " + isKingAdjacentToBlack(copy, false, myColour));
+//		System.out.println("IS KING ADJACENT TO BLACK: " + isKingAdjacentToBlack(copy, false, myColour));
 
 		// Return your move to be processed by the server.
 		return myMove;
