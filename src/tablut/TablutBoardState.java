@@ -53,7 +53,7 @@ public class TablutBoardState extends BoardState {
     private HashSet<Coord> muscoviteCoords; // we can use hashsets because
     private HashSet<Coord> swedeCoords;
     private Coord kingPosition;
-    private Random rand = new Random(1917);
+    private Random rand = new Random(System.currentTimeMillis()); // THIS WAS ORIGINALLY SET TO 1917 INSTEAD OF "System.currentTimeMillis()"!
     private int turnPlayer;
     private int turnNumber = 0;
     private int winner = Board.NOBODY;

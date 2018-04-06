@@ -3,6 +3,8 @@ package student_player;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.print.attribute.standard.RequestingUserName;
+
 import boardgame.Board;
 import boardgame.Move;
 import coordinates.Coord;
@@ -44,18 +46,18 @@ public class StudentPlayer extends TablutPlayer {
 		return false;
 	}
 
-	public int isKingCaptured(TablutBoardState boardState) {
+	public boolean isKingCaptured(TablutBoardState boardState) {
 		if(boardState.getKingPosition() == null) {
-			return 1;
+			return true;
 		}
 
-		return 0;
+		return false;
 	}
 
 	public int isKingInCorner(TablutBoardState boardState, boolean hasKingBeenCaptured) {
 		if(!hasKingBeenCaptured) {
 			if(Coordinates.isCorner(boardState.getKingPosition())) {
-				return -1;
+				return 1;
 			}
 		}
 
@@ -103,33 +105,50 @@ public class StudentPlayer extends TablutPlayer {
 		return false;
 	}
 
-	public int isKingAdjacentToBlack(TablutBoardState boardState, boolean hasKingBeenCaptured, int myColour) {
-		if(myColour == 1) { // Only want to do this if we are WHITE.
-			if(!hasKingBeenCaptured) {
-				HashSet<Coord> blackCoords = boardState.getOpponentPieceCoordinates();
-				for(Coord blackCoord : blackCoords) {
-					List<Coord> kingNeighbours = Coordinates.getNeighbors(boardState.getKingPosition());
-					for(Coord kingNeighbour : kingNeighbours) {
-						// If one of the King's neighbors is a black piece, we DON'T want to move here.
-						if(areTwoCoordsTheSame(blackCoord, kingNeighbour)) {
-							return 1;
-						}
-					}
+	public boolean isKingAdjacentToBlack(TablutBoardState boardState) {
+		HashSet<Coord> blackCoords = boardState.getPlayerPieceCoordinates();
+//		System.out.println("THE SIZE OF THE HASH SET OF MY PIECES IS: " + blackCoords.size());
+		for(Coord blackCoord : blackCoords) {
+			List<Coord> kingNeighbours = Coordinates.getNeighbors(boardState.getKingPosition());
+			for(Coord kingNeighbour : kingNeighbours) {
+				// If one of the King's neighbors is a black piece, we DON'T want to move here.
+				if(areTwoCoordsTheSame(blackCoord, kingNeighbour)) {
+					return true;
 				}
-
-				// If we get through all of the King's neighbors and none of them are black pieces, it is safe to move here.
-				return -1;
-
-
-			} else { // If the King HAS been captured, we don't care much so return 0.
-				return 0;
 			}
-		} else { // If we are black it doesn't make sense to look at this, so just return 0.
-			return 0;
 		}
+
+		return false;
 	}
 
-	public int evaluationFunction(TablutBoardState boardState, int myColour) {
+	public int evaluationFunctionBlack(TablutBoardState boardState, int myColour) {
+		// Value to return.
+		int finalValue = 0;
+
+		// 1. Number of white pieces captured.
+		int numWhitePiecesCaptured = 9 - boardState.getNumberPlayerPieces(1); // 9 is initial number of Swedes.
+		finalValue += numWhitePiecesCaptured * 1;
+
+		// 2. Number of black pieces remaining.
+		int numBlackPiecesRemaining = boardState.getNumberPlayerPieces(0);
+		finalValue += numBlackPiecesRemaining * 2;
+
+		// 3. Whether the king is captured or not.
+		boolean isKingCaptured = isKingCaptured(boardState);
+		// If the King has been captured, we know that its position value will be null. Therefore, any other checks 
+		// on the king following this will give null pointer exceptions. Therefore, if the King has been captured,
+		// set this flag so that we don't perform the other checks.
+		if(isKingCaptured) {
+			return Integer.MAX_VALUE;
+		}
+
+		return finalValue;
+	}
+	
+	public int evaluationFunctionWhite(TablutBoardState boardState, int myColour) {
+		// Value to return.
+		int finalValue = 0;
+		
 		// Flag to know if King has been captured or not.
 		boolean hasKingBeenCaptured = false;
 
@@ -137,38 +156,45 @@ public class StudentPlayer extends TablutPlayer {
 		// the MUSCOVITES (BLACK) will be the ones maximizing it.
 		// The features of the function will be:
 		// 1. Number of white pieces captured.
-		int numWhitePiecesCaptured = 9 - boardState.getNumberPlayerPieces(1); // 9 is initial number of Swedes.
-
+		int numWhitePiecesRemaining = boardState.getNumberPlayerPieces(1); // 9 is initial number of Swedes.
+		finalValue += numWhitePiecesRemaining * 1;
+		
 		// 2. Number of black pieces remaining.
-		int numBlackPiecesRemaining = boardState.getNumberPlayerPieces(0);
-
+		int numBlackPiecesCaptured = 16 - boardState.getNumberPlayerPieces(0);
+		finalValue += numBlackPiecesCaptured * 2;
+		
 		// 3. Whether the king is captured or not.
-		int isKingCaptured = isKingCaptured(boardState);
+		boolean isKingCaptured = isKingCaptured(boardState);
 		// If the King has been captured, we know that its position value will be null. Therefore, any other checks 
 		// on the king following this will give null pointer exceptions. Therefore, if the King has been captured,
 		// set this flag so that we don't perform the other checks.
-		if(isKingCaptured == 1) {
+		if(isKingCaptured) {
 			hasKingBeenCaptured = true;
+			return Integer.MIN_VALUE;
 		}
-
 
 		// 6. Whether the king (in his current position) has potential to be captured in EXACTLY one more move from black.
 		// i.e. Are we moving King directly adjacent to a black piece.
-		int isKingAdjacentToBlack = isKingAdjacentToBlack(boardState, hasKingBeenCaptured, myColour);
+		boolean isKingAdjacentToBlack = isKingAdjacentToBlack(boardState); // SOMETHING IS NOT WORKING HERE!!!
+		if(!isKingAdjacentToBlack) {
+			finalValue += 500;
+		}
 
 		// 7. Whether the king (in his current position) is EXACTLY one move away from reaching a corner.
-		int isKingOneMoveFromCorner = isKingOneMoveFromFinish(boardState);
+//		int isKingOneMoveFromCorner = isKingOneMoveFromFinish(boardState);
 
 		// 8. Distance of king from nearest corner.
-		int distanceOfKingFromNearestCorner = getDistanceOfKingFromNearestCorner(boardState, hasKingBeenCaptured);
+//		int distanceOfKingFromNearestCorner = getDistanceOfKingFromNearestCorner(boardState, hasKingBeenCaptured);
 		int distanceOfKingFromAnyCorner = getDistanceOfKingFromAnyCorner(boardState, hasKingBeenCaptured);
-
+		finalValue -= distanceOfKingFromAnyCorner * 1;
+		
 		// 9. Whether the king has actually reached a corner or not.
 		int isKingInCorner = isKingInCorner(boardState, hasKingBeenCaptured);
+		if(isKingInCorner == 1) { 
+			return Integer.MAX_VALUE;
+		}
 
-		return ((numWhitePiecesCaptured * 1) + (numBlackPiecesRemaining * 1) + (isKingCaptured * 100) 
-				+ (distanceOfKingFromNearestCorner * 10) + (isKingInCorner * 100));
-
+		return finalValue;
 	}
 
 	public TablutMove miniMaxDecisionAB(int depth, int myColour, TablutBoardState boardState, boolean isMaxPlayer) {
@@ -187,7 +213,7 @@ public class StudentPlayer extends TablutPlayer {
 			// Need to check if move we performed has brought us to a leaf state.
 			boolean isLeafState = isLeafState(clonedBoardState);
 
-			int moveValue = miniMaxValueAB(depth, myColour, clonedBoardState, isLeafState, isMaxPlayer, a, b);
+			int moveValue = miniMaxValueAB(depth, myColour, clonedBoardState, isLeafState, false, a, b);
 //			System.out.println("MOVE VALUE: " + moveValue);
 			if(isMaxPlayer) {
 				if(moveValue > a) {
@@ -203,9 +229,9 @@ public class StudentPlayer extends TablutPlayer {
 		}
 
 		if(isMaxPlayer) {
-//			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + a);
+//			System.out.println("THE FINAL RETURNED VALUE FOR MOVE BY MAX IS: " + a);
 		} else {
-//			System.out.println("THE FINAL RETURNED VALUE FOR MOVE IS: " + b);
+//			System.out.println("THE FINAL RETURNED VALUE FOR MOVE BY MIN IS: " + b);
 		}
 
 		return optimalMove;
@@ -213,7 +239,12 @@ public class StudentPlayer extends TablutPlayer {
 
 	public int miniMaxValueAB(int depth, int myColour, TablutBoardState clonedBoardState, boolean isLeafState, boolean isMaxPlayer, int a, int b) {
 		if(depth == 0 || isLeafState) {
-			return evaluationFunction(clonedBoardState, myColour);
+			if(myColour == 0) { // If we are black, use the black evaluation function.
+				return evaluationFunctionBlack(clonedBoardState, myColour);
+			} else { // If we are white, use the white evaluation function.
+				return evaluationFunctionWhite(clonedBoardState, myColour);
+			}
+			
 		}
 
 		if(isMaxPlayer) { // If I am the max player.
@@ -271,7 +302,7 @@ public class StudentPlayer extends TablutPlayer {
 		// Find out who is black (0) and who is white (1), and whether I am max player (black) or not.
 		int opponentColour = boardState.getOpponent();
 		int myColour = 1 - opponentColour;
-		boolean isMaxPlayer = isMaxPlayer(myColour);
+		boolean isMaxPlayer = true; // No matter what colour we are, we always want to be the max player.
 
 		// Find move using minimax algorithm.
 //		TablutMove myMove = miniMaxDecision(2, myColour, boardState, isMaxPlayer);
@@ -280,11 +311,9 @@ public class StudentPlayer extends TablutPlayer {
 		// For debugging.
 		TablutBoardState copy = (TablutBoardState) boardState.clone();
 		copy.processMove(myMove);
-//		System.out.println("IS KING ADJACENT TO BLACK: " + isKingAdjacentToBlack(copy, false, myColour));
+//		System.out.println("IS KING ADJACENT TO BLACK: " + isKingAdjacentToBlack(copy));
 
 		// Return your move to be processed by the server.
 		return myMove;
-
-
 	}
 }

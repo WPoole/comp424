@@ -9,7 +9,7 @@ import coordinates.Coord;
 import coordinates.Coordinates;
 
 public class GreedyTablutPlayer extends TablutPlayer {
-    private Random rand = new Random(1848);
+    private Random rand = new Random(System.currentTimeMillis()); // THIS WAS ORIGINALLY SET TO 1848 INSTEAD OF "System.currentTimeMillis()"!
 
     public GreedyTablutPlayer() {
         super("GreedyPlayer");

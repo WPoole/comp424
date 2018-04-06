@@ -685,7 +685,7 @@ public class Server implements Runnable {
     /** Send string to all players */
     private void broadcast(String str, boolean do_log) {
         if (do_log) {
-            log(str);
+//            log(str); // COMMENT THIS LINE IF YOU DON'T WANT EVERY MOVE BEING DISPLAYED!
         }
 
         for (int i = 0; i < board.getNumberOfPlayers(); i++)
