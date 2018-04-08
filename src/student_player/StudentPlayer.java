@@ -113,7 +113,8 @@ public class StudentPlayer extends TablutPlayer {
 		// 3. Whether the king is captured or not.
 		boolean isKingCaptured = isKingCaptured(boardState);
 		if(isKingCaptured) {
-			return Integer.MAX_VALUE;
+//			return Integer.MAX_VALUE;
+			return 100000;
 		}
 		
 		// 4. Distance of king from nearest corner.
@@ -123,7 +124,8 @@ public class StudentPlayer extends TablutPlayer {
 		// 5. Whether the king has actually reached a corner or not.
 		int isKingInCorner = isKingInCorner(boardState, isKingCaptured);
 		if(isKingInCorner == 1) { 
-			return Integer.MIN_VALUE;
+//			return Integer.MIN_VALUE;
+			return -100000;
 		}
 
 		return finalValue;
@@ -149,7 +151,8 @@ public class StudentPlayer extends TablutPlayer {
 		// on the king following this will give null pointer exceptions. Therefore, if the King has been captured,
 		// set this flag so that we don't perform the other checks.
 		if(isKingCaptured) {
-			return Integer.MIN_VALUE;
+//			return Integer.MIN_VALUE;
+			return -100000;
 		}
 
 		// 4. Are we moving King directly adjacent to a black piece.
@@ -165,7 +168,8 @@ public class StudentPlayer extends TablutPlayer {
 		// 6. Whether the king has actually reached a corner or not.
 		int isKingInCorner = isKingInCorner(boardState, isKingCaptured);
 		if(isKingInCorner == 1) { 
-			return Integer.MAX_VALUE;
+//			return Integer.MAX_VALUE;
+			return 100000;
 		}
 
 		return finalValue;
@@ -247,7 +251,7 @@ public class StudentPlayer extends TablutPlayer {
 	 * make decisions.
 	 */
 	public Move chooseMove(TablutBoardState boardState) {
-		MyTools.getSomething();
+//		MyTools.getSomething();
 
 		// Find out who is black (0) and who is white (1).
 		int opponentColour = boardState.getOpponent();
